@@ -38,7 +38,7 @@ loadrt tp
 loadrt [EMCMOT]EMCMOT servo_period_nsec=[EMCMOT]SERVO_PERIOD num_joints=[TRAJ]AXES  tp=tp kins=trivkins
 
 # load low-level drivers (must not include pins used by PRU)
-#loadrt hal_bb_gpio output_pins=807,813,819,826,914,913,911 input_pins=809,810,814,818
+loadrt hal_bb_gpio output_pins=807,813,819,826,914,913,911 input_pins=809,810,814,818
 
 loadrt [PRUCONF](DRIVER) prucode=$(HAL_RTMOD_DIR)/[PRUCONF](PRUBIN) [PRUCONF](CONFIG)
 
@@ -100,8 +100,8 @@ setp hpg.stepgen.00.maxaccel        [AXIS_0]STEPGEN_MAX_ACC
 setp hpg.stepgen.00.control-type    1
 setp hpg.stepgen.00.stepinvert      [AXIS_0]STEP_INVERT
 #setp hpg.stepgen.00.step_type       0
-setp hpg.stepgen.00.steppin         819
-setp hpg.stepgen.00.dirpin          818
+setp hpg.stepgen.00.steppin         812
+setp hpg.stepgen.00.dirpin          811
 
 # set PID loop gains from inifile
 setp pid.0.Pgain [AXIS_0]P
@@ -155,8 +155,8 @@ setp hpg.stepgen.01.maxaccel        [AXIS_1]STEPGEN_MAX_ACC
 setp hpg.stepgen.01.control-type    1
 setp hpg.stepgen.01.stepinvert      [AXIS_1]STEP_INVERT
 #setp hpg.stepgen.01.step_type       0
-setp hpg.stepgen.01.steppin         817
-setp hpg.stepgen.01.dirpin          816
+setp hpg.stepgen.01.steppin         816
+setp hpg.stepgen.01.dirpin          815
 
 # set PID loop gains from inifile
 setp pid.1.Pgain [AXIS_1]P
@@ -207,11 +207,11 @@ setp hpg.stepgen.02.position-scale  [AXIS_2]SCALE
 setp hpg.stepgen.02.maxvel          [AXIS_2]STEPGEN_MAX_VEL
 setp hpg.stepgen.02.maxaccel        [AXIS_2]STEPGEN_MAX_ACC
 
-setp hpg.stepgen.02.control-type    1
+setp hpg.stepgen.02.control-type    1 
 setp hpg.stepgen.02.stepinvert      [AXIS_2]STEP_INVERT
 #setp hpg.stepgen.02.step_type       0
-setp hpg.stepgen.02.steppin         815
-setp hpg.stepgen.02.dirpin          814
+setp hpg.stepgen.02.steppin         915
+setp hpg.stepgen.02.dirpin          923
 
 # set PID loop gains from inifile
 setp pid.2.Pgain [AXIS_2]P
@@ -265,8 +265,8 @@ setp hpg.stepgen.03.maxaccel        [AXIS_3]STEPGEN_MAX_ACC
 setp hpg.stepgen.03.control-type    1
 setp hpg.stepgen.03.stepinvert      [AXIS_3]STEP_INVERT
 #setp hpg.stepgen.03.step_type       0
-setp hpg.stepgen.03.steppin         813
-setp hpg.stepgen.03.dirpin          812
+setp hpg.stepgen.03.steppin         911
+setp hpg.stepgen.03.dirpin          913
 
 # set PID loop gains from inifile
 setp pid.3.Pgain [AXIS_3]P
@@ -325,9 +325,9 @@ net tool-change-loop iocontrol.0.tool-change => iocontrol.0.tool-changed
 # this input signal must be active LOW to allow the system to energize.
 # this should be fed through an NC STOP type switch from DB25-1 to DB25-10
 #net estop-in <= halui.machine.is-on
-#net estop-in => bb_gpio.p8.in-09
-#net estop-in => iocontrol.0.emc-enable-in
-#setp bb_gpio.p8.in-09.invert 1
+net estop-in => bb_gpio.p8.in-09 
+net estop-in => iocontrol.0.emc-enable-in
+setp bb_gpio.p8.in-09.invert 1
 
 
 # This output is on DB25-14 and is currently tied to spindle control (M3/M5)
@@ -344,3 +344,4 @@ setp bb_gpio.p8.out-19.invert 1
 # This output is on DB25-17 (M8/M9)
 net Output3 bb_gpio.p9.out-14 => halui.flood.is-on
 setp bb_gpio.p9.out-14.invert 1
+
