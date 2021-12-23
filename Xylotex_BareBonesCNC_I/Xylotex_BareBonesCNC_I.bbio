@@ -40,3 +40,21 @@ P9_41 in # Z Home Switch
 P8_09 in # A Home Switch
 
 P8_11 out # LED and active low gate enable
+
+P9_17   in
+P9_19   in
+P9_23   in
+P9_25   in
+P9_27   in
+P9_29   in
+P9_31   in
+P9_42   in
+P9_30   in
+P9_28   in
+P9_26   in
+P9_24   in
+P9_22   in
+P9_20   in
+P9_20   in
+P9_18   in
+P9_16   in
