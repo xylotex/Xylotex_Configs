@@ -23,7 +23,7 @@
 # Launch the setup script to make sure hardware setup looks good
 #loadusr -w /home/machinekit/machinekit/configs/ARM.BeagleBone.Xylotex/setup.sh
 loadusr -w ../setup.sh
-loadusr -w config-pin -f ./Xylotex_Servo.bbio
+loadusr -w config-pin -f ./Xylotex_BareBonesCNC_I.bbio
 
 # ###################################
 # Core EMC/HAL Loads
