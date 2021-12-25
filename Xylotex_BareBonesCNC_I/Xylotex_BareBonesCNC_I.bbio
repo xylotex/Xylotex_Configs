@@ -19,32 +19,32 @@ overlay cape-universal
 overlay cape-bone-iio
 #overlay cape-univ-emmc
 
-P8_10 out # spindle on/off
-P8_07 out # spindle fwd/rev
-P9_14 out # coolant on/off
-P9_15 out # other
+P8_10 out # spindle on/off   DB-1
+P8_07 out # spindle fwd/rev  DB-14
+P9_14 out # coolant on/off   DB-16
+P9_15 out # other            DB-17
 
-P8_12 out # A_DIR
-P8_13 out # A_STEP
-P8_14 out # Z_DIR
-P8_15 out # Z_STEP
-P8_16 out # Y_DIR
-P8_17 out # Y_STEP
-P8_18 out # X_DIR
-P8_19 out # X_STEP
+P8_12 out # A_DIR            DB-9
+P8_13 out # A_STEP           DB-8
+P8_14 out # Z_DIR            DB-7
+P8_15 out # Z_STEP           DB-6
+P8_16 out # Y_DIR            DB-5
+P8_17 out # Y_STEP           DB-4
+P8_18 out # X_DIR            DB-3
+P8_19 out # X_STEP           DB-2
 
-P9_11 in # STOP
-P9_13 in # X Home Switch
-P9_23 in # Y Home Switch
-P9_41 in # Z Home Switch
-P8_09 in # A Home Switch
+P9_11 in # STOP              DB-10 
+P9_13 in # X Home Switch     DB-11
+P9_23 in # Y Home Switch     DB-12
+P9_41 in # Z Home Switch     DB-13
+P8_09 in # A Home Switch     DB-15
 
 P8_11 out # LED and active low gate enable
 
 P9_17   in
 P9_19   in
 P9_23   in
-P9_25   in
+P9_25   in   # remove '#'from: #set disable_uboot_overlay_audio=1    in /boot/uEnv.txt
 P9_27   in
 P9_29   in
 P9_31   in
