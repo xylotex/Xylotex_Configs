@@ -1,0 +1,2 @@
+#!/bin/bash
+sudo mount -t cifs //office_pc/CNCFILES /mnt/WinPC -o username=machinekit,password=machinekit
