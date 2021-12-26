@@ -1,3 +1,8 @@
 #!/bin/bash
-sudo mount -t cifs //office_pc/CNCFILES /mnt/WinPC -o username=machinekit,password=machinekit
-machinekit
+# you normally only need to run this script once.
+# if you need to choose another configuration, run this script again
+# otherwise run either ./run1 or ./run2
+# ./run1 will mount the Windows directory then start Machinekit
+# ./run2 will just start Machinekit if the directory has already been mounted
+echo STARTING Machinekit Configuration Manager
+machinekit 

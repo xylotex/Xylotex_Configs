@@ -1,0 +1,20 @@
+#!/bin/bash
+# from the /home/machinekit directory type ./run1 to run this script
+# this file should be run the first time you do a normal MachineKit boot up.
+# if you have run this script once after boot up, and want to run machinekit again then run the script ./run2
+# which doesn't try to mount the drive again (gives an error if try to mount the directory again)
+
+echo MOUNTING Windows Directory under /mnt/WinPC
+
+echo Remove THIS line and the next three lines when you have changed your username and password.
+echo Use leafpad to edit this file.
+echo Press Return.
+read response
+
+# mounting the WinPC directory uses the generic & common user name and password: machinekit
+# //office_pc is the name of my PC.  Use your own PC name there.
+# /CNCFILES is the name of my directory on the PC. Use your own directory name there
+#
+sudo mount -t cifs //office_pc/CNCFILES /mnt/WinPC -o username=machinekit,password=machinekit
+echo STARTING Machinekit last run
+machinekit -l
