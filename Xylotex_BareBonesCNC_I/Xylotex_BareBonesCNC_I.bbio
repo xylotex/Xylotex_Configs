@@ -41,20 +41,20 @@ P8_09 in # A Home Switch     DB-15
 
 P8_11 out # LED and active low gate enable
 
-P9_17   in
-P9_19   in
-P9_23   in
-P9_25   in   # remove '#'from: #set disable_uboot_overlay_audio=1    in /boot/uEnv.txt
-P9_27   in
-P9_29   in
-P9_31   in
-P9_42   in
-P9_30   in
-P9_28   in
-P9_26   in
-P9_24   in
-P9_22   in
-P9_20   in
-P9_20   in
-P9_18   in
-P9_16   in
+P9_17   in_pu
+P9_19   in_pu
+P9_23   in_pu
+P9_25   in_pu   # remove '#'from: #set disable_uboot_overlay_audio=1    in /boot/uEnv.txt
+P9_27   in_pu
+P9_29   in_pu
+P9_31   in_pu
+P9_42   in_pu
+P9_30   in_pu
+P9_28   in_pu
+P9_26   in_pu
+P9_24   in_pu
+P9_22   in_pu
+P9_20   in_pu
+P9_20   in_pu
+P9_18   in_pu
+P9_16   in_pu
