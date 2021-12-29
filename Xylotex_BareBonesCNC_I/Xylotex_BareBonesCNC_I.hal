@@ -38,7 +38,7 @@ loadrt tp
 loadrt [EMCMOT]EMCMOT servo_period_nsec=[EMCMOT]SERVO_PERIOD num_joints=[TRAJ]AXES  tp=tp kins=trivkins
 
 # load low-level drivers (must not include pins used by PRU)
-loadrt hal_bb_gpio output_pins=807,813,819,826,914,913,911 input_pins=809,810,814,818
+loadrt hal_bb_gpio output_pins=807,813,819,826,914,913,911 input_pins=809,810,814,818,808,930,928,926,924,925,922,921,920,919,918,917,916,942,931,929,927
 
 loadrt [PRUCONF](DRIVER) prucode=$(HAL_RTMOD_DIR)/[PRUCONF](PRUBIN) [PRUCONF](CONFIG)
 
@@ -344,4 +344,18 @@ setp bb_gpio.p8.out-19.invert 1
 # This output is on DB25-17 (M8/M9)
 net Output3 bb_gpio.p9.out-14 => halui.flood.is-on
 setp bb_gpio.p9.out-14.invert 1
+
+net PAUSE bb_gpio.p8.in-8
+net RESET bb_gpio.p9.in-20
+net START bb_gpio.p9.in-25
+net STOP  bb_gpio.p9.in-42
+net MUX_Y0 bb_gpio.p9.in-31
+net MUX_Y1 bb_gpio.p9.in-29
+net MUX_Y2 bb_gpio.p9.in-29
+net MUX_Z1 bb_gpio.p9.in-19
+net MUX_Z2 bb_gpio.p9.in-16
+
+net JA bb_gpio.p9.in-30
+net JB bb_gpio.p9.in-28
+
 
