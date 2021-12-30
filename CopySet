@@ -10,6 +10,13 @@ sudo apt-get install cifs-utils
 sudo apt-get install leafpad
 sudo apt-get install -y pcmanfm
 
+md -p machinekit/configs/ARM.BeagleBone.Xylotex
+
+git clone https://github.com/xylotex/Xylotex_Configs
+echo Change to Xylotex Directory
+cd /Xylotex_Configs
+cp -R * ~/machinekit/configs/ARM.BeagleBone.Xylotex
+
 cd /opt/scripts/tools/
 git pull
 sudo ./grow_partition.sh
