@@ -355,7 +355,10 @@ net MUX_Y2 bb_gpio.p9.in-27
 net MUX_Z1 bb_gpio.p9.in-19
 net MUX_Z2 bb_gpio.p9.in-16
 
-net JA bb_gpio.p9.in-30
-net JB bb_gpio.p9.in-28
+setp hpg.encoder.00.chan.00.A-pin   2 # pin 2 for PRU: pr1_pru0_pru_r31_2 P9.30  PRU_0 *gpio3_16
+setp hpg.encoder.00.chan.00.B-pin   3 # pin 3 for PRU: pr1_pru0_pru_r31_3 P9.28  PRU_0 *gpio3_17
+setp hpg.encoder.00.chan.00.counter-mode 1 # X4 quadrature input
+
+net Hand_Wheel <= hpg.encoder.00.chan.00.rawcounts
 
 
