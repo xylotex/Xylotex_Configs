@@ -1,21 +1,4 @@
-# These buffer ALL signals used on the DB25 port
-# The board also has a pair of a set of four 0805 size jumper resistors
-# these can be used to output either the standard Spindle/Mist/flood and
-# input ALIM from the DB25 pins
-# or allow BBB SPI signals to be routed to the DB25 connector instead.
-# The ALIM RC buffer Capacitor would need to change if this
-# option was used.  The LIM Switch input signals are pulled to 3V3 through
-# 10K resistors
-# then go through a 1K resistor and bypassed with a .22uF cap.   This is
-# the cap that should be removed
-# if the SPI port (untested option)  is used.  The 4 SPI signals are also
-# directly routed
-# to six through-holes which include 3V3 and GND.  This signals are
-# otherwise Unbuffered and
-# go directly to the BBB
-# At powerup the LVC541 enable signals are pulled high, disabling the
-# drivers until
-# the BBB and MachineKit pull the enable signal low.
+
 #
 ########################################
 
@@ -38,12 +21,21 @@ loadrt tp
 loadrt [EMCMOT]EMCMOT servo_period_nsec=[EMCMOT]SERVO_PERIOD num_joints=[TRAJ]AXES  tp=tp kins=trivkins
 
 # load low-level drivers (must not include pins used by PRU)
-loadrt hal_bb_gpio output_pins=807,813,819,826,914,913,911 input_pins=809,810,814,818,808,930,928,926,924,925,922,921,920,919,918,917,916,942,931,929,927
+loadrt hal_bb_gpio output_pins=807,813,819,826,914,913,911 input_pins=809,810,814,818,808,926,924,925,922,921,920,919,918,917,916,942,931,929,927
 
-loadrt [PRUCONF](DRIVER) prucode=$(HAL_RTMOD_DIR)/[PRUCONF](PRUBIN) [PRUCONF](CONFIG)
-
+#loadrt [PRUCONF](DRIVER) prucode=$(HAL_RTMOD_DIR)/[PRUCONF](PRUBIN) [PRUCONF](CONFIG)
+loadrt [PRUCONF](DRIVER) prucode=$(HAL_RTMOD_DIR)/[PRUCONF](PRUBIN) [PRUCONF](CONFIG) halname=hpg num_encoders=1
 loadrt pid count=4
 loadrt limit1 count=2
+
+# logic gates, flip flops and mux
+#loadrt and2 count=16
+#loadrt or2 count=1
+loadrt not count=11
+loadrt mux4 count=1
+loadrt logic count=4 personality=0x103,0x103,0x103,0x103  # AND is mode (0x100) with 3 inputs = 0x3 = 0x103
+#loadrt flipflop count=2
+loadrt conv_s32_bit count=1
 
 # ################################################
 # THREADS
@@ -61,6 +53,43 @@ addf pid.3.do-pid-calcs                   servo-thread
 addf limit1.0                             servo-thread
 addf limit1.1                             servo-thread
 addf hpg.update                           servo-thread
+# add logic gates,flip flops and mux
+#addf and2.1                               servo-thread
+#addf and2.2                               servo-thread
+#addf and2.3                               servo-thread
+#addf and2.4                               servo-thread
+#addf and2.5                               servo-thread
+#addf and2.6                               servo-thread
+#addf and2.7                               servo-thread
+#addf and2.8                               servo-thread
+#addf and2.9                               servo-thread
+#addf and2.10                              servo-thread
+#addf and2.11                              servo-thread
+#addf and2.12                              servo-thread
+#addf and2.13                              servo-thread
+#addf and2.14                              servo-thread
+#addf and2.15                              servo-thread
+#addf not.0                                servo-thread
+#addf not.1                                servo-thread
+addf not.2                                servo-thread
+addf not.3                                servo-thread
+addf not.4                                servo-thread
+#addf not.5                                servo-thread
+#addf not.6                                servo-thread
+#addf not.7                                servo-thread
+#addf not.8                                servo-thread
+#addf not.9                                servo-thread
+#addf not.10                                servo-thread
+#addf or2.0                                servo-thread
+addf mux4.0                               servo-thread
+addf logic.0                              servo-thread
+addf logic.1                              servo-thread
+addf logic.2                              servo-thread
+addf logic.3                              servo-thread
+#addf flipflop.0                           servo-thread
+#addf flipflop.1                           servo-thread
+#addf conv_s32_bit.0                       servo-thread
+#
 addf bb_gpio.write                        servo-thread
 
 
@@ -325,9 +354,12 @@ net tool-change-loop iocontrol.0.tool-change => iocontrol.0.tool-changed
 # this input signal must be active LOW to allow the system to energize.
 # this should be fed through an NC STOP type switch from DB25-1 to DB25-10
 #net estop-in <= halui.machine.is-on
-net estop-in => bb_gpio.p8.in-09 
-net estop-in => iocontrol.0.emc-enable-in
-setp bb_gpio.p8.in-09.invert 1
+#net estop-in => bb_gpio.p8.in-09 
+#net estop-in => iocontrol.0.emc-enable-in
+
+setp iocontrol.0.emc-enable-in TRUE
+
+#setp bb_gpio.p8.in-09.invert 1
 
 
 # This output is on DB25-14 and is currently tied to spindle control (M3/M5)
@@ -349,16 +381,63 @@ net PAUSE bb_gpio.p8.in-08
 net RESET bb_gpio.p9.in-20
 net START bb_gpio.p9.in-25
 net STOP  bb_gpio.p9.in-42
-net MUX_Y0 bb_gpio.p9.in-31
-net MUX_Y1 bb_gpio.p9.in-29
-net MUX_Y2 bb_gpio.p9.in-27
-net MUX_Z1 bb_gpio.p9.in-19
-net MUX_Z2 bb_gpio.p9.in-16
+#net MUX_Y0 bb_gpio.p9.in-31
+#net MUX_Y1 bb_gpio.p9.in-29
+#net MUX_Y2 bb_gpio.p9.in-27
+#net MUX_Z1 bb_gpio.p9.in-19
+#net MUX_Z2 bb_gpio.p9.in-16
 
-setp hpg.encoder.00.chan.00.A-pin   2 # pin 2 for PRU: pr1_pru0_pru_r31_2 P9.30  PRU_0 *gpio3_16
-setp hpg.encoder.00.chan.00.B-pin   3 # pin 3 for PRU: pr1_pru0_pru_r31_3 P9.28  PRU_0 *gpio3_17
+
+#Connect PRU to HAL for Jog signal A and B
+setp hpg.encoder.00.chan.00.A-pin   2 # pr1_pru0_pru_r31_2 P9.30  PRU_0 *gpio3_16
+setp hpg.encoder.00.chan.00.B-pin   3 # pr1_pru0_pru_r31_3 P9.28  PRU_0 *gpio3_17
 setp hpg.encoder.00.chan.00.counter-mode 1 # X4 quadrature input
 
 net Hand_Wheel <= hpg.encoder.00.chan.00.rawcounts
+setp axis.0.jog-vel-mode 0
+setp axis.1.jog-vel-mode 0
+setp axis.2.jog-vel-mode 0
+
+#logic for selecting jog rate with MUX
+setp mux4.0.in3 0.1
+setp mux4.0.in2 0.01
+setp mux4.0.in1 0.001
+setp mux4.0.in0 0.0001
+#mux select input (1 of 4 rates)
+net scale1 mux4.0.sel0 <= bb_gpio.p9.in-19
+net scale2 mux4.0.sel1 <= bb_gpio.p9.in-16
+net mpg-scale <= mux4.0.out
+net mpg-scale => axis.0.jog-scale
+net mpg-scale => axis.1.jog-scale
+net mpg-scale => axis.2.jog-scale
+
+#logic for selecting axis with 
+net S_Y0 not.2.in logic.1.in-00 logic.3.in-00 <= bb_gpio.p9.in-31
+net S_Y1 not.3.in logic.2.in-01 logic.3.in-01 <= bb_gpio.p9.in-29
+net S_Y2 not.4.in <= bb_gpio.p9.in-27
+
+net L00 logic.0.in-00 logic.2.in-00 <= not.2.out                            # not of bb_gpio.p9.in-31
+net L01 logic.0.in-01 logic.1.in-01  <= not.3.out                            # not of bb_gpio.p9.in-29
+net L02 logic.0.in-02 logic.1.in-02 logic.2.in-02 logic.3.in-02 <= not.4.out # not of bb_gpio.p9.in-27
+
+net Hand_Wheel => axis.0.jog-counts
+net Hand_Wheel => axis.1.jog-counts
+net Hand_Wheel => axis.2.jog-counts
+# rotary select switch select axis X..W (0..7)
+# 0 0 0  !p27 and !p29 and !p31 for logic.0 axis X
+# 0 0 1  !p27 and !p29 and  p31 for logic.1 axis Y 
+# 0 1 0  !p27 and  p29 and !p31 for logic.2 axis Z
+# 0 1 1  !p27 and  p29 and  p31 for logic.3 axis A
+# 1 0 0   p27 and !p29 and !p31 for logic.4 if enabled using B input (i.e.use encoder wheel to scroll)
+# 1 0 1   p27 and !p29 and  p31 for logic.5 if enabled using C input (i.e use encoder wheel to inc/dec rapid value)
+# 1 1 0   p27 and  p29 and !p31 for logic.6 if enabled using U input (i.e use encoder wheel to inc/dec spindle speed)
+# 1 1 1   p27 and  p29 and  p31 for logic.7 if enabled using W inpuy (i.e. something else)
 
 
+net mpg-x axis.0.jog-enable <= logic.0.and
+net mpg-y axis.1.jog-enable <= logic.1.and
+net mpg-z axis.2.jog-enable <= logic.2.and
+net mpg-a axis.3.jog-enable <= logic.3.and
+#------------
+# END-OF-FILE
+#------------
