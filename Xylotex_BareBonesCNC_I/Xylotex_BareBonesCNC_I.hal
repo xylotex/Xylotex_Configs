@@ -345,13 +345,13 @@ setp bb_gpio.p8.out-19.invert 1
 net Output3 bb_gpio.p9.out-14 => halui.flood.is-on
 setp bb_gpio.p9.out-14.invert 1
 
-net PAUSE bb_gpio.p8.in-8
+net PAUSE bb_gpio.p8.in-08
 net RESET bb_gpio.p9.in-20
 net START bb_gpio.p9.in-25
 net STOP  bb_gpio.p9.in-42
 net MUX_Y0 bb_gpio.p9.in-31
 net MUX_Y1 bb_gpio.p9.in-29
-net MUX_Y2 bb_gpio.p9.in-29
+net MUX_Y2 bb_gpio.p9.in-27
 net MUX_Z1 bb_gpio.p9.in-19
 net MUX_Z2 bb_gpio.p9.in-16
 
