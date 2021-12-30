@@ -10,10 +10,10 @@ sudo apt-get install cifs-utils
 sudo apt-get install leafpad
 sudo apt-get install -y pcmanfm
 
-md -p machinekit/configs/ARM.BeagleBone.Xylotex
+mkdir -p machinekit/configs/ARM.BeagleBone.Xylotex
 
 cp -R * ~/machinekit/configs/ARM.BeagleBone.Xylotex
-
+#cp -r /usr/share/linuxcnc/examples/* ~/machinekit
 cd /opt/scripts/tools/
 git pull
 sudo ./grow_partition.sh
