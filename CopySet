@@ -13,3 +13,4 @@ sudo apt-get install -y pcmanfm
 cd /opt/scripts/tools/
 git pull
 sudo ./grow_partition.sh
+echo REBOOT by typing: sudo reboot
