@@ -98,19 +98,19 @@ setup_menu_accel .menu.file end [_ "_Quit"]
 # ----------------------------------------------------------------------
 .menu.machine add command \
 	-accelerator F1 \
-	-command estop_clicked_pass
+	-command estop_clicked
 setup_menu_accel .menu.machine end [_ "Toggle _Emergency Stop"]
 
 .menu.machine add command \
 	-accelerator F2 \
-	-command onoff_clicked_pass
+	-command onoff_clicked
 setup_menu_accel .menu.machine end [_ "Toggle _Machine Power"]
 
 .menu.machine add separator
 
 .menu.machine add command \
 	-accelerator R \
-	-command task_run_pass
+	-command task_run
 setup_menu_accel .menu.machine end [_ "_Run program"]
 
 .menu.machine add command \
@@ -496,8 +496,6 @@ setup_menu_accel .menu.help end [_ "Quick _Reference"]
 
 
 # ----------------------------------------------------------------------
-# DROP DOWN MENUS
-#-----------------------------------------------------------------------
 .menu add cascade \
 	-menu .menu.file
 setup_menu_accel .menu end [_ _File]
@@ -523,19 +521,17 @@ frame .toolbar \
 	-relief raised
 
 vrule .toolbar.rule16
-#------------------------------------------------------------------------
-# TOOLBAR BUTTONS
-#------------------------------------------------------------------------
+
 Button .toolbar.machine_estop \
 	-helptext [_ "Toggle Emergency Stop \[F1\]"] \
 	-image [load_image tool_estop] \
 	-relief sunken \
 	-takefocus 0
-bind .toolbar.machine_estop <Button-1> { estop_clicked_pass }
+bind .toolbar.machine_estop <Button-1> { estop_clicked }
 setup_widget_accel .toolbar.machine_estop {}
 
 Button .toolbar.machine_power \
-	-command onoff_clicked_pass \
+	-command onoff_clicked \
 	-helptext [_ "Toggle Machine power \[F2\]"] \
 	-image [load_image tool_power] \
 	-relief link \
@@ -564,37 +560,29 @@ setup_widget_accel .toolbar.reload {}
 vrule .toolbar.rule4
 
 Button .toolbar.program_run \
-	-command task_run_pass \
-	-helptext [_ " "] \
+	-command task_run \
+	-helptext [_ "Begin executing current file \[R\]"] \
 	-image [load_image tool_run] \
 	-relief link \
 	-takefocus 0
 setup_widget_accel .toolbar.program_run {}
 
 Button .toolbar.program_step \
-	-command task_step_pass \
-	-helptext [_ " "] \
+	-command task_step \
+	-helptext [_ "Execute next line \[T\]"] \
 	-image [load_image tool_step] \
 	-relief link \
 	-takefocus 0
 setup_widget_accel .toolbar.program_step {}
 
 Button .toolbar.program_pause \
-	-command task_pauseresume_pass \
+	-command task_pauseresume \
 	-helptext [_ "Pause \[P\] / resume \[S\] execution"] \
 	-image [load_image tool_pause] \
 	-relief link \
 	-takefocus 0
 setup_widget_accel .toolbar.program_pause {}
        
-Button .toolbar.program_singlestep \
-	-command { set single_step [expr {!$single_step}]; toggle_single_step } \
-	-helptext [_ "Single Step"] \
-	-image [load_image tool_SingleStep] \
-	-relief raised \
-	-takefocus 0
-setup_widget_accel .toolbar.program_singlestep {}
-
 Button .toolbar.program_stop \
 	-command task_stop \
 	-helptext [_ "Stop program execution \[ESC\]"] \
@@ -699,9 +687,7 @@ Button .toolbar.clear_plot \
 	-relief link \
 	-takefocus 0
 setup_widget_accel .toolbar.clear_plot {}
-#------------------------------------------------------------------------------
-# PACK TOOLBAR BUTTONS
-#------------------------------------------------------------------------------
+
 # Pack widget .toolbar.machine_estop
 pack .toolbar.machine_estop \
 	-side left
@@ -742,10 +728,6 @@ pack .toolbar.program_step \
 
 # Pack widget .toolbar.program_pause
 pack .toolbar.program_pause \
-	-side left
-
-# Pack widget .toolbar.program_singlestep
-pack .toolbar.program_singlestep \
 	-side left
 
 # Pack widget .toolbar.program_stop
@@ -833,9 +815,7 @@ catch {
     .pane paneconfigure $pane_top -stretch always
     .pane paneconfigure $pane_bottom -stretch never
 }
-#------------------------------------------------------------------------------
-# NOTEBOOK MANUAL MDI RUN TABS
-#------------------------------------------------------------------------------
+
 NoteBook ${pane_top}.tabs \
 	-borderwidth 2 \
 	-arcradius 3
@@ -855,14 +835,10 @@ after 1 after idle set_pane_minsize
 
 set _tabs_manual [${pane_top}.tabs insert end manual -text [_ "Manual Control \[F3\]"] -raisecmd {focus .; ensure_manual}]
 set _tabs_mdi [${pane_top}.tabs insert end mdi -text [_ "MDI \[F5\]"]]
-set _tabs_run [${pane_top}.tabs insert end run -text [_ "RUN"] -raisecmd {focus .; ensure_run}]
-
 $_tabs_manual configure -borderwidth 2
 $_tabs_mdi configure -borderwidth 2
-$_tabs_run configure -borderwidth 2
 
 ${pane_top}.tabs itemconfigure mdi -raisecmd "[list focus ${_tabs_mdi}.command]; ensure_mdi"
-
 #${pane_top}.tabs raise manual
 after idle {
     ${pane_top}.tabs raise manual
@@ -870,14 +846,10 @@ after idle {
     after idle ${pane_top}.tabs compute_size
     after idle ${pane_top}.right compute_size
 }
-#------------------------------------------------------------------------------
-# TABS MANUAL
-#------------------------------------------------------------------------------
-#label $_tabs_manual.axis
-#setup_widget_accel $_tabs_manual.axis [_ Axis:]
-#------------------------------------------------------------------------------
-# AXES XYZABCUVW FRAME
-#------------------------------------------------------------------------------
+
+label $_tabs_manual.axis
+setup_widget_accel $_tabs_manual.axis [_ Axis:]
+
 frame $_tabs_manual.axes
 
 radiobutton $_tabs_manual.axes.axisx \
@@ -887,7 +859,8 @@ radiobutton $_tabs_manual.axes.axisx \
 	-variable current_axis \
 	-width 2 \
         -text X \
-        -command axis_activated_x
+        -command axis_activated_x \
+        -state disabled
 
 radiobutton $_tabs_manual.axes.axisy \
 	-anchor w \
@@ -902,7 +875,7 @@ radiobutton $_tabs_manual.axes.axisz \
 	-anchor w \
 	-padx 0 \
 	-value z \
-        -variable current_axis \
+	-variable current_axis \
 	-width 2 \
         -text Z \
         -command axis_activated_z
@@ -963,63 +936,60 @@ radiobutton $_tabs_manual.axes.axisw \
         -command axis_activated_w
 
 # Grid widget $_tabs_manual.axes.axisa
-#grid $_tabs_manual.axes.axisu \
-#	-column 0 \
-#	-row 2 \
-#	-padx 4
+grid $_tabs_manual.axes.axisu \
+	-column 0 \
+	-row 2 \
+	-padx 4
 
 # Grid widget $_tabs_manual.axes.axisb
-#grid $_tabs_manual.axes.axisv \
-#	-column 1 \
-#	-row 2 \
-#	-padx 4
+grid $_tabs_manual.axes.axisv \
+	-column 1 \
+	-row 2 \
+	-padx 4
 
 # Grid widget $_tabs_manual.axes.axisc
-#grid $_tabs_manual.axes.axisw \
-#	-column 2 \
-#	-row 2 \
-#	-padx 4
+grid $_tabs_manual.axes.axisw \
+	-column 2 \
+	-row 2 \
+	-padx 4
 
 
 # Grid widget $_tabs_manual.axes.axisa
-#grid $_tabs_manual.axes.axisa \
-#	-column 0 \
-#	-row 1 \
-#	-padx 4
+grid $_tabs_manual.axes.axisa \
+	-column 0 \
+	-row 1 \
+	-padx 4
 
 # Grid widget $_tabs_manual.axes.axisb
-#grid $_tabs_manual.axes.axisb \
-#	-column 1 \
-#	-row 1 \
-#	-padx 4
+grid $_tabs_manual.axes.axisb \
+	-column 1 \
+	-row 1 \
+	-padx 4
 
 # Grid widget $_tabs_manual.axes.axisc
-#grid $_tabs_manual.axes.axisc \
-#	-column 2 \
-#	-row 1 \
-#	-padx 4
+grid $_tabs_manual.axes.axisc \
+	-column 2 \
+	-row 1 \
+	-padx 4
 
 # Grid widget $_tabs_manual.axes.axisx
-#grid $_tabs_manual.axes.axisx \
-#	-column 0 \
-#	-row 0 \
-#	-padx 4
+grid $_tabs_manual.axes.axisx \
+	-column 0 \
+	-row 0 \
+	-padx 4
 
 # Grid widget $_tabs_manual.axes.axisy
-#grid $_tabs_manual.axes.axisy \
-#	-column 1 \
-#	-row 0 \
-#	-padx 4
+grid $_tabs_manual.axes.axisy \
+	-column 1 \
+	-row 0 \
+	-padx 4
 
 # Grid widget $_tabs_manual.axes.axisz
-#grid $_tabs_manual.axes.axisz \
-#	-column 2 \
-#	-row 0 \
-#	-padx 4
+grid $_tabs_manual.axes.axisz \
+	-column 2 \
+	-row 0 \
+	-padx 4
 
-#------------------------------------------------------------------------------
-# JOINTS 012345678 FRAME
-#------------------------------------------------------------------------------
 frame $_tabs_manual.joints
 
 radiobutton $_tabs_manual.joints.joint0 \
@@ -1029,7 +999,8 @@ radiobutton $_tabs_manual.joints.joint0 \
 	-variable current_axis \
 	-width 2 \
         -text 0 \
-        -command axis_activated_x
+        -command axis_activated_x \
+        -state disabled
 
 radiobutton $_tabs_manual.joints.joint1 \
 	-anchor w \
@@ -1046,7 +1017,7 @@ radiobutton $_tabs_manual.joints.joint2 \
 	-value z \
 	-variable current_axis \
 	-width 2 \
-       -text 2 \
+        -text 2 \
         -command axis_activated_z
 
 radiobutton $_tabs_manual.joints.joint3 \
@@ -1157,9 +1128,7 @@ grid $_tabs_manual.joints.joint8 \
 	-column 2 \
 	-row 2 \
 	-padx 4
-#------------------------------------------------------------------------------
-# Jog Speed/Dir FRAME
-#------------------------------------------------------------------------------
+
 frame $_tabs_manual.jogf
 frame $_tabs_manual.jogf.jog
 
@@ -1196,29 +1165,20 @@ frame $_tabs_manual.jogf.jog
 #	-width 10
 #$_tabs_manual.jogf.jog.jogincr list insert end [_ Continuous] 0.1000 0.0100 0.0010 0.0001
 
-#------------------------------------------------------------------------------
-# HOME SINGLE, HOME ALL, TOUCH OFF FRAME
-#------------------------------------------------------------------------------
 frame $_tabs_manual.jogf.zerohome
-#
-button $_tabs_manual.jogf.zerohome.single\
-	-command  {${::pane_top}.right raise numbers; home_axis_single } \
-	-padx 2m \
-	-pady 0
-setup_widget_accel $_tabs_manual.jogf.zerohome.single [_ "Home Single Axis"]
 
 button $_tabs_manual.jogf.zerohome.home \
 	-command home_axis \
 	-padx 2m \
 	-pady 0
-setup_widget_accel $_tabs_manual.jogf.zerohome.home [_ "Home All Axes"]
-#
+setup_widget_accel $_tabs_manual.jogf.zerohome.home [_ "Home Axis"]
+
 button $_tabs_manual.jogf.zerohome.zero \
-	-command {${::pane_top}.right raise numbers; touch_off} \
+	-command touch_off \
 	-padx 2m \
 	-pady 0
-setup_widget_accel $_tabs_manual.jogf.zerohome.zero [_ "Touch Off Axis"]
-#
+setup_widget_accel $_tabs_manual.jogf.zerohome.zero [_ "Touch Off"]
+
 checkbutton $_tabs_manual.jogf.override \
 	-command toggle_override_limits \
 	-variable override_limits
@@ -1230,31 +1190,24 @@ grid $_tabs_manual.jogf.zerohome \
 	-columnspan 3 \
 	-sticky w
 
-#grid $_tabs_manual.jogf.jog \
-#	-column 0 \
-#	-row 0 \
-#	-columnspan 3 \
-#	-sticky w
-
-# Grid widget $_tabs_manual.jogf.zerohome.single
-grid $_tabs_manual.jogf.zerohome.single \
+grid $_tabs_manual.jogf.jog \
 	-column 0 \
 	-row 0 \
-	-ipadx 2 \
-	-pady 2 \
+	-columnspan 3 \
 	-sticky w
+
 # Grid widget $_tabs_manual.jogf.zerohome.home
 grid $_tabs_manual.jogf.zerohome.home \
 	-column 0 \
-	-row 1 \
+	-row 0 \
 	-ipadx 2 \
 	-pady 2 \
 	-sticky w
 
 # Grid widget $_tabs_manual.jogf.zerohome.zero
 grid $_tabs_manual.jogf.zerohome.zero \
-	-column 0 \
-	-row 2 \
+	-column 1 \
+	-row 0 \
 	-ipadx 2 \
 	-pady 2 \
 	-sticky w
@@ -1262,7 +1215,7 @@ grid $_tabs_manual.jogf.zerohome.zero \
 # Grid widget $_tabs_manual.jogf.override
 grid $_tabs_manual.jogf.override \
 	-column 0 \
-	-row 4 \
+	-row 3 \
 	-columnspan 3 \
 	-pady 2 \
 	-sticky w
@@ -1286,13 +1239,11 @@ grid $_tabs_manual.jogf.override \
 #	-column 2 \
 #	-row 0 \
 #	-pady 2 \
-#       -sticky nsw
+#        -sticky nsw
 
 vspace $_tabs_manual.space1 \
 	-height 12
-#------------------------------------------------------------------------------
-# SPINDLE FWD, STOP  COOLANT FRAME  MANUAL
-#------------------------------------------------------------------------------
+
 label $_tabs_manual.spindlel
 setup_widget_accel $_tabs_manual.spindlel [_ Spindle:]
 
@@ -1429,11 +1380,11 @@ grid $_tabs_manual.axes \
 	-sticky w
 
 # Grid widget $_tabs_manual.axis
-#grid $_tabs_manual.axis \
-#	-column 0 \
-#	-row 0 \
-#	-pady 1 \
-#	-sticky nw
+grid $_tabs_manual.axis \
+	-column 0 \
+	-row 0 \
+	-pady 1 \
+	-sticky nw
 
 # Grid widget $_tabs_manual.coolant
 grid $_tabs_manual.coolant \
@@ -1487,9 +1438,7 @@ grid $_tabs_manual.spindlel \
 	-row 3 \
 	-pady 2 \
 	-sticky nw
-#------------------------------------------------------------------------------
-# TABS MDI
-#------------------------------------------------------------------------------
+
 label $_tabs_mdi.historyl
 setup_widget_accel $_tabs_mdi.historyl [_ History:]
 
@@ -1601,125 +1550,7 @@ grid $_tabs_mdi.vs3 \
 	-row 8
 grid columnconfigure $_tabs_mdi 0 -weight 1
 grid rowconfigure $_tabs_mdi 1 -weight 1
-#------------------------------------------------------------------------------
-# TABS RUN
-#------------------------------------------------------------------------------
-# Spacing for buttons that are not used
-vspace $_tabs_run.space1 \
-	-height 115
 
-label $_tabs_run.spindlel
-setup_widget_accel $_tabs_run.spindlel [_ Spindle:]
-
-frame $_tabs_run.spindlef
-frame $_tabs_run.spindlef.row1
-frame $_tabs_run.spindlef.row2
-
-radiobutton $_tabs_run.spindlef.stop \
-	-borderwidth 2 \
-	-command spindle \
-	-indicatoron 0 \
-	-selectcolor [systembuttonface] \
-	-value 0 \
-	-variable spindledir
-setup_widget_accel $_tabs_run.spindlef.stop [_ Stop]
-
-radiobutton $_tabs_run.spindlef.cw \
-	-borderwidth 2 \
-	-command spindle \
-	-image [load_image spindle_cw] \
-	-indicatoron 0 \
-	-selectcolor [systembuttonface] \
-	-value 1 \
-	-variable spindledir
-setup_widget_accel $_tabs_run.spindlef.cw {}
-
-grid $_tabs_run.spindlef.row1 -row 1 -column 0 -sticky nw
-grid $_tabs_run.spindlef.row2 -row 2 -column 0 -sticky nw
-
-# Grid widget $_tabs_run.spindlef.stop
-pack $_tabs_run.spindlef.stop \
-        -in $_tabs_run.spindlef.row1 \
-        -side left \
-        -pady 2 \
-        -ipadx 8
-
-# Grid widget $_tabs_run.spindlef.cw
-pack $_tabs_run.spindlef.cw \
-        -in $_tabs_run.spindlef.row1 \
-        -side left \
-        -pady 2
-
-# Space betwen Spindle and coolant buttons
-vspace $_tabs_run.space2 \
-	-height 37
-
-label $_tabs_run.coolant
-setup_widget_accel $_tabs_run.coolant [_ Coolant:]
-
-checkbutton $_tabs_run.mist \
-	-command mist \
-	-variable mist
-setup_widget_accel $_tabs_run.mist [_ Mist]
-
-checkbutton $_tabs_run.flood \
-	-command flood \
-	-variable flood
-setup_widget_accel $_tabs_run.flood [_ Flood]
-
-grid rowconfigure $_tabs_run 99 -weight 1
-grid columnconfigure $_tabs_run 99 -weight 1
-
-# Grid widget $_tabs_run.coolant
-grid $_tabs_run.coolant \
-	-column 0 \
-	-row 5 \
-	-sticky w
-
-# Grid widget $_tabs_run.flood
-grid $_tabs_run.flood \
-	-column 1 \
-	-row 6 \
-	-columnspan 2 \
-	-padx 4 \
-	-sticky w
-
-
-# Grid widget $_tabs_run.mist
-grid $_tabs_run.mist \
-	-column 1 \
-	-row 5 \
-	-columnspan 2 \
-	-padx 4 \
-	-sticky w
-
-# Grid widget $_tabs_run.space1
-grid $_tabs_run.space1 \
-	-column 0 \
-	-row 2
-
-# Grid widget $_tabs_run.space2
-grid $_tabs_run.space2 \
-	-column 0 \
-	-row 4
-
-# Grid widget $_tabs_run.spindlef
-grid $_tabs_run.spindlef \
-	-column 1 \
-	-row 3 \
-	-padx 4 \
-	-sticky w
-
-# Grid widget $_tabs_manual.spindlel
-grid $_tabs_run.spindlel \
-	-column 0 \
-	-row 3 \
-	-pady 2 \
-	-sticky nw
-
-##########################
-#NOTEBOOK PREVIEW DRO TABS
-##########################
 NoteBook ${pane_top}.right \
         -borderwidth 2 \
         -arcradius 3
@@ -1736,7 +1567,6 @@ text ${_tabs_numbers}.text -width 1 -height 1 -wrap none \
 	-relief flat
 pack ${_tabs_numbers}.text -fill both -expand 1
 bindtags ${_tabs_numbers}.text [list ${_tabs_numbers}.text . all]
-
 
 frame .info
 
@@ -1827,16 +1657,16 @@ bind . <greater> [regsub %W [bind Scale <Right>] ${pane_top}.ajogspeed.s]
 
 
 frame ${pane_top}.jogspeed
-#label ${pane_top}.jogspeed.l0 -text [_ "Jog Speed:"]
-#label ${pane_top}.jogspeed.l1
-#scale ${pane_top}.jogspeed.s -bigincrement 0 -from .06 -to 1 -resolution .020 -showvalue 0 -variable jog_slider_val -command update_jog_slider_vel -orient h -takefocus 0
-#label ${pane_top}.jogspeed.l -textv jog_speed -width 6 -anchor e
-#pack ${pane_top}.jogspeed.l0 -side left
-#pack ${pane_top}.jogspeed.l -side left
-#pack ${pane_top}.jogspeed.l1 -side left
-#pack ${pane_top}.jogspeed.s -side right
-#bind . , [regsub %W [bind Scale <Left>] ${pane_top}.jogspeed.s]
-#bind . . [regsub %W [bind Scale <Right>] ${pane_top}.jogspeed.s]
+label ${pane_top}.jogspeed.l0 -text [_ "Jog Speed:"]
+label ${pane_top}.jogspeed.l1
+scale ${pane_top}.jogspeed.s -bigincrement 0 -from .06 -to 1 -resolution .020 -showvalue 0 -variable jog_slider_val -command update_jog_slider_vel -orient h -takefocus 0
+label ${pane_top}.jogspeed.l -textv jog_speed -width 6 -anchor e
+pack ${pane_top}.jogspeed.l0 -side left
+pack ${pane_top}.jogspeed.l -side left
+pack ${pane_top}.jogspeed.l1 -side left
+pack ${pane_top}.jogspeed.s -side right
+bind . , [regsub %W [bind Scale <Left>] ${pane_top}.jogspeed.s]
+bind . . [regsub %W [bind Scale <Right>] ${pane_top}.jogspeed.s]
 
 frame ${pane_top}.maxvel
 label ${pane_top}.maxvel.l0 -text [_ "Max Velocity:"]
@@ -1988,7 +1818,7 @@ text .about.message \
 	.about.message configure -cursor hand2
 	.about.message tag configure link -foreground red}
 .about.message tag bind link <ButtonPress-1><ButtonRelease-1> {launch_website}
-.about.message insert end [subst [_ "Machinekit/AXIS version \$version\n\nCopyright (C) 2004..2018 Jeff Epler and Chris Radek.\n\nThis is free software, and you are welcome to redistribute it under certain conditions.  See the file COPYING, included with Machinekit.\n\nVisit the Machinekit web site: "]] {} {http://www.machinekit.io/} link
+.about.message insert end [subst [_ "Machinekit/AXIS version \$version\n\nCopyright (C) 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012 Jeff Epler and Chris Radek.\n\nThis is free software, and you are welcome to redistribute it under certain conditions.  See the file COPYING, included with Machinekit.\n\nVisit the Machinekit web site: "]] {} {http://www.machinekit.io/} link
 .about.message configure -state disabled
 
 button .about.ok \
@@ -2069,10 +1899,10 @@ grid ${pane_top}.spinoverride \
 	-row 4 \
 	-sticky new
 
-#grid ${pane_top}.jogspeed \
-#	-column 0 \
-#	-row 5 \
-#	-sticky new
+grid ${pane_top}.jogspeed \
+	-column 0 \
+	-row 5 \
+	-sticky new
 
 grid ${pane_top}.ajogspeed \
 	-column 0 \
@@ -2146,8 +1976,6 @@ set INTERP_WAITING 4
 set TRAJ_MODE_FREE 1
 set KINEMATICS_IDENTITY 1
 
-#    $_tabs_manual.jogf.jog.jogminus \
-#    $_tabs_manual.jogf.jog.jogplus \
 set manual [concat [winfo children $_tabs_manual.axes] \
     $_tabs_manual.jogf.zerohome.home \
     $_tabs_manual.spindlef.cw $_tabs_manual.spindlef.ccw \
@@ -2156,9 +1984,12 @@ set manual [concat [winfo children $_tabs_manual.axes] \
     $_tabs_mdi.go $_tabs_mdi.history]
 
 proc disable_group {ws} { foreach w $ws { $w configure -state disabled } }
-proc enable_group {ws} { foreach w $ws { $w configure -state normal } }
-
-
+proc enable_group {ws} { foreach w $ws { $w configure -state normal } 
+                         $::_tabs_manual.axes.axisx configure -state disabled -disabledforeground black
+                         $::_tabs_manual.axes.axisy configure -state disabled -disabledforeground black
+                         $::_tabs_manual.axes.axisz configure -state disabled -disabledforeground black
+                         $::_tabs_manual.axes.axisa configure -state disabled -disabledforeground black
+}
 
 proc state {e args} {
     set e [uplevel \#0 [list expr $e]]
@@ -2244,8 +2075,6 @@ proc update_state {args} {
                 .toolbar.program_pause
     relief {$block_delete != 0} \
                 .toolbar.program_blockdelete
-#    relief {$single_step != 0} \
-#                .toolbar.program_singlestep
     relief {$optional_stop != 0} \
                 .toolbar.program_optpause
     state  {$task_state == $STATE_ON && $interp_state != $INTERP_IDLE} \
@@ -2258,10 +2087,10 @@ proc update_state {args} {
             && $interp_state == $INTERP_IDLE && $highlight_line != -1} \
                 {.menu.machine "Ru_n from selected line"}
 
-#    state {$::task_state == $::STATE_ON && $::interp_state == $::INTERP_IDLE\
-#            && $spindledir != 0} \
-#                $::_tabs_manual.spindlef.spindleminus \
-#                $::_tabs_manual.spindlef.spindleplus
+    state {$::task_state == $::STATE_ON && $::interp_state == $::INTERP_IDLE\
+            && $spindledir != 0} \
+                $::_tabs_manual.spindlef.spindleminus \
+                $::_tabs_manual.spindlef.spindleplus
 
     if {$::motion_mode == $::TRAJ_MODE_FREE && $::kinematics_type != $::KINEMATICS_IDENTITY} {
         set ::position [concat [_ "Position:"] Joint]
@@ -2272,21 +2101,21 @@ proc update_state {args} {
         set ::position [concat [_ "Position:"] $coord_str $display_str]
     }
 
-#    if {$::task_state == $::STATE_ON} {
-#	if {$::interp_state == $::INTERP_IDLE} {
-#	    if {$::last_interp_state != $::INTERP_IDLE || $::last_task_state != $::task_state} {
-#		set_mode_from_tab
-#	    }
-#	    enable_group $::manual
-#	}
-#	if {$::queued_mdi_commands < $::max_queued_mdi_commands } {
-#	    enable_group $::manual
-#	} else {
-#	    disable_group $::manual
-#	}
-#  } else {
-#        disable_group $::manual
-#  }
+    if {$::task_state == $::STATE_ON} {
+	if {$::interp_state == $::INTERP_IDLE} {
+	    if {$::last_interp_state != $::INTERP_IDLE || $::last_task_state != $::task_state} {
+		set_mode_from_tab
+	    }
+	    enable_group $::manual
+	}
+	if {$::queued_mdi_commands < $::max_queued_mdi_commands } {
+	    enable_group $::manual
+	} else {
+	    disable_group $::manual
+	}
+    } else {
+        disable_group $::manual
+    }
 
 #    if {$::task_state == $::STATE_ON && $::interp_state == $::INTERP_IDLE &&
 #        ($::motion_mode == $::TRAJ_MODE_FREE
@@ -2318,23 +2147,22 @@ proc set_mode_from_tab {} {
     set page [${::pane_top}.tabs raise]
     switch $page {
         mdi { ensure_mdi }
-        run { ensure_run }
         default { ensure_manual }
     }
 
 }
 
-#proc joint_mode_switch {args} {
-#    if {$::motion_mode == $::TRAJ_MODE_FREE && $::kinematics_type != $::KINEMATICS_IDENTITY} {
-#        grid forget $::_tabs_manual.axes
-#        grid $::_tabs_manual.joints -column 1 -row 0 -padx 0 -pady 0 -sticky w
-#        setup_widget_accel $::_tabs_manual.axis [_ Joint:]
-#    } else {
-#        grid forget $::_tabs_manual.joints
-#        grid $::_tabs_manual.axes -column 1 -row 0 -padx 0 -pady 0 -sticky w
-#        setup_widget_accel $::_tabs_manual.axis [_ Axis:]
-#    }    
-#}
+proc joint_mode_switch {args} {
+    if {$::motion_mode == $::TRAJ_MODE_FREE && $::kinematics_type != $::KINEMATICS_IDENTITY} {
+        grid forget $::_tabs_manual.axes
+        grid $::_tabs_manual.joints -column 1 -row 0 -padx 0 -pady 0 -sticky w
+        setup_widget_accel $::_tabs_manual.axis [_ Joint:]
+    } else {
+        grid forget $::_tabs_manual.joints
+        grid $::_tabs_manual.axes -column 1 -row 0 -padx 0 -pady 0 -sticky w
+        setup_widget_accel $::_tabs_manual.axis [_ Axis:]
+    }    
+}
 
 proc queue_update_state {args} { 
     after cancel update_state
@@ -2352,7 +2180,6 @@ set task_mode -1
 set task_paused 0
 set optional_stop 0
 set block_delete 0
-set single_step 0
 set interp_pause 0
 set last_interp_state 0
 set interp_state 0
@@ -2375,7 +2202,6 @@ trace variable task_mode w queue_update_state
 trace variable task_paused w queue_update_state
 trace variable optional_stop w queue_update_state
 trace variable block_delete w queue_update_state
-trace variable single_step w queue_update_state
 trace variable interp_pause w queue_update_state
 trace variable interp_state w queue_update_state
 trace variable running_line w queue_update_state
@@ -2386,7 +2212,7 @@ trace variable display_type w queue_update_state
 trace variable motion_mode w queue_update_state
 trace variable kinematics_type w queue_update_state
 trace variable on_any_limit w queue_update_state
-#trace variable motion_mode w joint_mode_switch
+trace variable motion_mode w joint_mode_switch
 trace variable queued_mdi_commands  w queue_update_state
 
 set editor_deleted 0
@@ -2444,9 +2270,9 @@ foreach c {Entry Spinbox} {
                                                                         break}
 }
 
-#proc is_continuous {} {
+proc is_continuous {} {
 #    expr {"[$::_tabs_manual.jogf.jog.jogincr get]" == [_ "Continuous"]}
-#}
+}
 
 proc show_all text {
     $text yview moveto 0.0
@@ -2504,7 +2330,7 @@ proc size_menubutton_to_entries {w} {
 }
 
 #size_combobox_to_entries $_tabs_manual.jogf.jog.jogincr
-#size_label_to_strings $_tabs_manual.axis [_ Joint:] [_ Axis:]
+size_label_to_strings $_tabs_manual.axis [_ Joint:] [_ Axis:]
 
 proc setval {vel max_speed} {
     if {$vel == 0} { return 0 }
@@ -2552,11 +2378,11 @@ proc val2vel_show {val maxvel} {
     }
 }
 
-#proc set_slider_min {minval} {
-#    global pane_top
-#    global max_speed
-#    ${pane_top}.jogspeed.s configure -from [setval $minval $max_speed]
-#}
+proc set_slider_min {minval} {
+    global pane_top
+    global max_speed
+    ${pane_top}.jogspeed.s configure -from [setval $minval $max_speed]
+}
 
 proc set_aslider_min {minval} {
     global pane_top
@@ -2591,17 +2417,17 @@ proc update_maxvel_slider {} {
     set maxvel_slider_val [setval $maxvel_speed $max_speed_units]
 }
 
-#proc update_units {args} {
-#    if {$::metric} {
-#        ${::pane_top}.jogspeed.l1 configure -text mm/min
-#        ${::pane_top}.maxvel.l1 configure -text mm/min
-#    } else {
-#        ${::pane_top}.jogspeed.l1 configure -text in/min
-#        ${::pane_top}.maxvel.l1 configure -text in/min
-#    }
-#    update_jog_slider_vel $::jog_slider_val
-#    update_maxvel_slider_vel $::maxvel_slider_val
-#}
+proc update_units {args} {
+    if {$::metric} {
+        ${::pane_top}.jogspeed.l1 configure -text mm/min
+        ${::pane_top}.maxvel.l1 configure -text mm/min
+    } else {
+        ${::pane_top}.jogspeed.l1 configure -text in/min
+        ${::pane_top}.maxvel.l1 configure -text in/min
+    }
+    update_jog_slider_vel $::jog_slider_val
+    update_maxvel_slider_vel $::maxvel_slider_val
+}
 
 proc update_ajog_slider_vel {newval} {
     global jog_aspeed max_aspeed
@@ -2649,14 +2475,12 @@ DynamicHelp::add $_tabs_manual.flood -text [_ "Turn flood on or off \[F8\]"]
 DynamicHelp::add $_tabs_manual.mist -text [_ "Turn mist on or off \[F7\]"]
 DynamicHelp::add $_tabs_manual.jogf.zerohome.home -text [_ "Send active axis home \[Home\]"]
 DynamicHelp::add $_tabs_manual.jogf.zerohome.zero -text [_ "Set G54 offset for active axis \[End\]"]
-#DynamicHelp::add $_tabs_manual.axes.axisx -text [_ "Activate axis \[X\]"]
-#DynamicHelp::add $_tabs_manual.axes.axisy -text [_ "Activate axis \[Y\]"]
-#DynamicHelp::add $_tabs_manual.axes.axisz -text [_ "Activate axis \[Z\]"]
-#DynamicHelp::add $_tabs_manual.axes.axisa -text [_ "Activate axis \[A\]"]
-#DynamicHelp::add $_tabs_manual.axes.axisb -text [_ "Activate axis \[4\]"]
-#DynamicHelp::add $_tabs_manual.axes.axisc -text [_ "Activate axis \[5\]"]
-#DynamicHelp::add $_tabs_manual.jogf.jog.jogminus -text [_ "Jog selected axis"]
-#DynamicHelp::add $_tabs_manual.jogf.jog.jogplus -text [_ "Jog selected axis"]
+DynamicHelp::add $_tabs_manual.axes.axisx -text [_ "Activate axis \[X\]"]
+DynamicHelp::add $_tabs_manual.axes.axisy -text [_ "Activate axis \[Y\]"]
+DynamicHelp::add $_tabs_manual.axes.axisz -text [_ "Activate axis \[Z\]"]
+DynamicHelp::add $_tabs_manual.axes.axisa -text [_ "Activate axis \[A\]"]
+DynamicHelp::add $_tabs_manual.axes.axisb -text [_ "Activate axis \[4\]"]
+DynamicHelp::add $_tabs_manual.axes.axisc -text [_ "Activate axis \[5\]"]
 #DynamicHelp::add $_tabs_manual.jogf.jog.jogincr -text [_ "Select jog increment"]
 DynamicHelp::add $_tabs_manual.jogf.override -text [_ "Temporarily allow jogging outside machine limits \[L\]"]
 

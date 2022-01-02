@@ -135,6 +135,7 @@ old_axis = -1
 program_start_line = 0
 program_start_line_last = -1
 single_step=False
+last_notification = "none"
 
 lathe = 0
 mdi_history_max_entries = 1000
@@ -181,6 +182,7 @@ spindlerate_blackout = 0
 maxvel_blackout = 0
 jogincr_index_last = 1
 mdi_history_index= -1
+Flag_Start=0
 
 help1 = [
     ("F1", _("Emergency stop")),
@@ -332,6 +334,8 @@ class Notification(Tkinter.Frame):
 
 
     def add(self, iconname, message):
+        global last_notification
+        last_notification = message
         self.place(relx=1, rely=1, y=-20, anchor="se")
         iconname = self.tk.call("load_image", "std_" + iconname)
         close = self.tk.call("load_image", "close", "notification-close")
@@ -406,7 +410,7 @@ class MyOpengl(GlCanonDraw, Opengl):
         self.last_Feed_Hold_Button = False
         self.last_Start_Button = False  
         self.last_Stop_Button = -1
-        self.last_Jog_Increment = 0
+        self.last_Jog_Count = 0
 
     def getRotateMode(self):
         return vars.rotate_mode.get()
@@ -591,6 +595,7 @@ class MyOpengl(GlCanonDraw, Opengl):
     def redraw_dro(self):
         global axis_selected
         global old_axis
+        global last_natification
         self.stat.poll()
         limit, homed, posstrs, droposstrs = self.posstrs()
 
@@ -606,7 +611,7 @@ class MyOpengl(GlCanonDraw, Opengl):
         font_width = self.font_width
         font_vertspace = self.font_vertspace
         text.delete("0.0", "end")
-        text.insert("end", "Rate: ")
+        text.insert("end", "Jog Wheel Rate: ")
         text.insert("end", comp["Rate_Sel"])
         text.insert("end", "\n")
         t = droposstrs[:]
@@ -697,17 +702,16 @@ def vupdate(var, val):
         pass
     var.set(val)
 
-
+#    root_window.tk.eval("$_tabs_manual.jogf.zerohome.single configure -state disabled")
 def disable_buttons():
     root_window.tk.eval("$_tabs_manual.jogf.zerohome.zero configure -state disabled")
     root_window.tk.eval("$_tabs_manual.jogf.zerohome.home configure -state disabled")
-    root_window.tk.eval("$_tabs_manual.jogf.zerohome.single configure -state disabled")
     o.redraw_soon()
 
+#    root_window.tk.eval("$_tabs_manual.jogf.zerohome.single configure -state normal")
 def enable_buttons():
     root_window.tk.eval("$_tabs_manual.jogf.zerohome.zero configure -state normal")
     root_window.tk.eval("$_tabs_manual.jogf.zerohome.home configure -state normal")
-    root_window.tk.eval("$_tabs_manual.jogf.zerohome.single configure -state normal")
     o.redraw_soon()
 
 class LivePlotter:
@@ -788,8 +792,8 @@ class LivePlotter:
         global axis_selected
         global feedrate_percent
         global single_step
-
-
+        global last_notification
+        global Flag_Start
         if not self.running.get():
             return
         try:
@@ -817,7 +821,7 @@ class LivePlotter:
 
         limits = soft_limits()
 #FIXME single step can be done in the ui and not in hal
-        comp["Single_Step"]=single_step
+#        comp["Single_Step"]=single_step
         if (self.logger.npts != self.lastpts
                 or comp["jsel1"] != o.last_jog_sel1
                 or comp["jsel2"] != o.last_jog_sel2
@@ -827,7 +831,7 @@ class LivePlotter:
                 or comp["Stop_Button"] != o.last_Stop_Button
                 or comp["Cycle_Start"] != o.last_Start_Button                
                 or comp["Rate_Sel"] != o.last_rate_sel
-                or comp["Jog_Increment"] != o.last_Jog_Increment
+                or comp["Jog_Count"] != o.last_Jog_Count
                
                 or limits != o.last_limits
                 or self.stat.actual_position != o.last_position
@@ -854,9 +858,17 @@ class LivePlotter:
             o.last_tool = self.stat.tool_table[0]
             o.last_joint_position = self.stat.joint_actual_position
             s.poll()
+
+            #SINGLE_STEP MODE
+            if (comp["jsel3"]==1 and comp["jsel2"]==0 and comp["jsel1"]==0):#B SingleStepMde
+                SingleStepMode=1;
+            else:
+                SingleStepMode=0;
+
             # RESET
-            if ((comp["Reset_Button"] == False) and (o.last_Reset_Button != comp["Reset_Button"])):
-                 print "reset"
+            Reset_Button=comp["Reset_Button"]
+            if ((Reset_Button == True) and (o.last_Reset_Button != Reset_Button)):
+#                 print "reset"
                  if (comp["Is_Running"]):  # if running, stop
                      if s.task_mode == linuxcnc.MODE_AUTO and vars.running_line.get() != 0:
                         o.set_highlight_line(vars.running_line.get())
@@ -870,48 +882,63 @@ class LivePlotter:
                     notifications.clear_one()
                  else:
                     enable_buttons()
-                    t.tag_remove("executing", "0.0", "end")
-                    set_first_line(0)
-            o.last_Reset_Button=comp["Reset_Button"]
+                  #  t.tag_remove("executing", "0.0", "end")
+                  #  set_first_line(0)
+            o.last_Reset_Button = Reset_Button
 
             # FEED HOLD
-            if ((comp["Hold_Button"] == True) and (o.last_Feed_Hold_Button != comp["Hold_Button"])):
+            Hold_Button = comp["Hold_Button"]
+            if ((Hold_Button == True) and (o.last_Feed_Hold_Button != Hold_Button)):
                 if s.task_mode != linuxcnc.MODE_AUTO or \
                    s.interp_state not in (linuxcnc.INTERP_READING, linuxcnc.INTERP_WAITING):
                    return
                 ensure_mode(linuxcnc.MODE_AUTO)
                 c.auto(linuxcnc.AUTO_PAUSE)
-            o.last_Feed_Hold_Button=comp["Hold_Button"]
+            o.last_Feed_Hold_Button=Hold_Button
 
             # CYCLE START disable_manual
-            if ((comp["Cycle_Start"] == True) and (o.last_Start_Button != comp["Cycle_Start"])):
+            Cycle_Start = comp["Cycle_Start"]
+            if (Cycle_Start == True):
+                if (Flag_Start == 0):
+                    Flag_Start = 1
+
+            if (Flag_Start==1): #// process the button pressed once wait til unpressed to happen again
+                 # process the button here
+                 Flag_Start=2
+
                  isHomed=True
-                 print "Cycle Start"
+ 
                  s.poll()
                  for i,h in enumerate(s.homed):
                      if s.axis_mask & (1<<i):
                         isHomed=isHomed and h
-                 if s.task_mode != linuxcnc.MODE_AUTO:
-                    notifications.add("info","Must be in RUN mode")
-                 elif not isHomed:
-                    notifications.add("info","Must be Homed")
+                 if not isHomed:
+                    if (last_notification != "Must be Homed"):
+                        notifications.add("info","Must be Homed")
                  elif (notifications.exist()):
-                    notifications.add("info","Clear Messages before RUN")
-                 elif (single_step==True):   # single step a line  
-                    print "Single Step"
-                    if s.task_mode != linuxcnc.MODE_AUTO or s.interp_state != linuxcnc.INTERP_IDLE:
-                       o.set_highlight_line(None)
-                       if run_warn(): return
-                    print "MODE AUTO STEP"
-                    ensure_mode(linuxcnc.MODE_AUTO)
-                    c.auto(linuxcnc.AUTO_STEP)
-                 elif s.paused:           # resume a running program  
-                    print "Resume"
+                    if (last_notification != "Clear Messages before RUN"):
+                        notifications.add("info","Clear Messages before RUN")
+#--
+#--
+                 # check for single SINGLE_STEP, go to AUTO_STEP mode pauseresume
+                 if (SingleStepMode == 1):  
+                     if s.task_mode != linuxcnc.MODE_AUTO or s.interp_state != linuxcnc.INTERP_IDLE:
+                        o.set_highlight_line(None)
+                        if run_warn(): return
+                     ensure_mode(linuxcnc.MODE_AUTO)
+                     s.poll()
+                     if s.paused:
+                        c.auto(linuxcnc.AUTO_STEP)  # arrow icon pressed task_step pressed
+                        print "STEP"
+#--
+
+                 elif comp["Is_Paused"]:           # resume a running program  
                     disable_buttons()
                     if (s.task_mode in (linuxcnc.MODE_AUTO, linuxcnc.MODE_MDI)):
                         ensure_mode(linuxcnc.MODE_AUTO, linuxcnc.MODE_MDI)
                         c.auto(linuxcnc.AUTO_RESUME)  
-                 else:                    # start a program running
+
+                 elif (comp["Is_Running"] !=True):
                     print "Run"
                     if run_warn():return
                     disable_buttons()
@@ -925,43 +952,50 @@ class LivePlotter:
                     t.see("2.0")
                     t.see("0.0")
 
-
-
+            if (Cycle_Start != True):
+                Flag_Start=0
             o.last_Start_Button=comp["Cycle_Start"] 
+
             # EMERGENCY STOP BUTTON
             if ((comp["Stop_Button"] == 1) and (o.last_Stop_Button != comp["Stop_Button"])):
-               notifications.add("error","Emergency Stop")
+               if (last_notification != "Emergency Stop"):
+                   notifications.add("error","Emergency Stop")
             o.last_Stop_Button=comp["Stop_Button"]
-            # JOG HANDLE CHANGE
+
+
+
+            # JOG HANDLE AXIS CHANGE (non axis)  //feed override change
             if (comp["jsel3"]==1 and comp["jsel2"]==0 and comp["jsel1"]==1):  # 'C' used for Feed Override
                 Jog_Change=0
-                if (comp["Jog_Increment"] != o.last_Jog_Increment):
-                    if (comp["Jog_Increment"] > o.last_Jog_Increment):
-                        Jog_Change = comp["Jog_Increment"] - o.last_Jog_Increment
-                        Jog_Change = Jog_Change *.01
+                if (comp["Jog_Count"] != o.last_Jog_Count):
+                    if (comp["Jog_Count"] > o.last_Jog_Count):
+                        Jog_Change = comp["Jog_Count"] - o.last_Jog_Count
+                        Jog_Change = Jog_Change * -.01
                     else:
-                        Jog_Change = o.last_Jog_Increment - comp["Jog_Increment"]
-                        Jog_Change = Jog_Change *-.01
+                        Jog_Change = o.last_Jog_Count - comp["Jog_Count"]
+                        Jog_Change = Jog_Change * .01
                    
                    
                 value = (feedrate_percent + Jog_Change)*100
-                if (value > 120): #FIXME this 120 should be a define or variable
-                    value = 120
+                if (value > 100): 
+                    value = 100
                 if (value < 0):
                     value=0
                 commands.set_feedrate(value)
                 #print "change ",Jog_Change, value
-                o.last_Jog_Increment = comp["Jog_Increment"]
+                o.last_Jog_Count = comp["Jog_Count"]
                    
 
             # ESTOP handled through HAL
+
             self.last_speed = speed
             self.lastpts = self.logger.npts
+
             # AXIS SELECT KNOB CHANGE
             if (o.last_jog_sel1 != comp["jsel1"] or 
                 o.last_jog_sel2 != comp["jsel2"] or
                 o.last_jog_sel3 != comp["jsel3"]):
-#           then Axis select knob has change. so update DRO as necessary
+#           then Axis select knob has changed. so update DRO as necessary
                 o.last_jog_sel1 = comp["jsel1"]
                 o.last_jog_sel2 = comp["jsel2"]
                 o.last_jog_sel3 = comp["jsel3"]
@@ -969,14 +1003,23 @@ class LivePlotter:
                 if (comp["jsel3"]==0 and comp["jsel2"]==0 and comp["jsel1"]==0):  # X axis
                     axis_selected=0
                     vars.current_axis.set('x');
+                    _axis_activated("x")
                 elif (comp["jsel3"]==0 and comp["jsel2"]==0 and comp["jsel1"]==1):  # Y axis
                     axis_selected=1
                     vars.current_axis.set('y');
+                    _axis_activated("y")
                 elif (comp["jsel3"]==0 and comp["jsel2"]==1 and comp["jsel1"]==0):  # Z axis
                     axis_selected=2
                     vars.current_axis.set('z');
+                    _axis_activated("z")
+                elif (comp["jsel3"]==0 and comp["jsel2"]==1 and comp["jsel1"]==1):  # A axis
+                    axis_selected=3
+                    vars.current_axis.set('a');
+                    _axis_activated("a")
+                    
                 else:
                     axis_selected=-1
+                    _axis_activated("u")  # unused, not visible for now
                  
                 o.redraw_dro()
             o.last_rate_sel=comp["Rate_Sel"]
@@ -2376,7 +2419,7 @@ class TclCommands(nf.TclCommands):
         ensure_mode(linuxcnc.MODE_AUTO)
         c.auto(linuxcnc.AUTO_PAUSE)
 
-    def task_resume(*event):
+    def task_resume(*event):  #// button press of 's'
         s.poll()
         if not s.paused:
             return
@@ -3567,7 +3610,7 @@ if hal_present == 1 :
     comp.newpin("run-disable",hal.HAL_BIT, hal.HAL_IN)
     vars.has_ladder.set(hal.component_exists('classicladder_rt'))
 #
-    comp.newpin("Single_Step",hal.HAL_BIT, hal.HAL_OUT)
+#    comp.newpin("Single_Step",hal.HAL_BIT, hal.HAL_OUT)
     comp.newpin("Reset_Button",hal.HAL_BIT, hal.HAL_IN)
     comp.newpin("Hold_Button",hal.HAL_BIT,hal. HAL_IN)
     comp.newpin("Stop_Button",hal.HAL_BIT, hal.HAL_IN)
@@ -3575,12 +3618,14 @@ if hal_present == 1 :
     comp.newpin("jsel1",hal.HAL_BIT, hal.HAL_IN)
     comp.newpin("jsel2",hal.HAL_BIT, hal.HAL_IN)
     comp.newpin("jsel3",hal.HAL_BIT, hal.HAL_IN)
-    comp.newpin("jog_in.x",hal.HAL_BIT, hal.HAL_IN)
-    comp.newpin("jog_in.y",hal.HAL_BIT, hal.HAL_IN)
-    comp.newpin("jog_in.z",hal.HAL_BIT, hal.HAL_IN)
+#    comp.newpin("jog_in.x",hal.HAL_BIT, hal.HAL_IN)
+#    comp.newpin("jog_in.y",hal.HAL_BIT, hal.HAL_IN)
+#    comp.newpin("jog_in.z",hal.HAL_BIT, hal.HAL_IN)
     comp.newpin("Is_Running",hal.HAL_BIT, hal.HAL_IN)
+    comp.newpin("Is_Idle",hal.HAL_BIT, hal.HAL_IN)
+    comp.newpin("Is_Paused",hal.HAL_BIT, hal.HAL_IN)
     comp.newpin("Rate_Sel",hal.HAL_FLOAT, hal.HAL_IN)
-    comp.newpin("Jog_Increment",hal.HAL_S32, hal.HAL_IN)
+    comp.newpin("Jog_Count",hal.HAL_S32, hal.HAL_IN)
 
 
     if vcp:
