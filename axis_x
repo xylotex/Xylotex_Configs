@@ -125,7 +125,7 @@ rs274.options.install(root_window)
 root_window.tk.call("set", "version", linuxcnc.version)
 
 try:
-    nf.source_lib_tcl(root_window,"axis.tcl")
+    nf.source_lib_tcl(root_window,"axis_x.tcl")
 except TclError:
     print root_window.tk.call("set", "errorInfo")
     raise
@@ -183,6 +183,7 @@ maxvel_blackout = 0
 jogincr_index_last = 1
 mdi_history_index= -1
 Flag_Start=0
+last_Jog_Count=0
 
 help1 = [
     ("F1", _("Emergency stop")),
@@ -410,7 +411,7 @@ class MyOpengl(GlCanonDraw, Opengl):
         self.last_Feed_Hold_Button = False
         self.last_Start_Button = False  
         self.last_Stop_Button = -1
-        self.last_Jog_Count = 0
+
 
     def getRotateMode(self):
         return vars.rotate_mode.get()
@@ -794,6 +795,7 @@ class LivePlotter:
         global single_step
         global last_notification
         global Flag_Start
+        global last_Jog_Count
         if not self.running.get():
             return
         try:
@@ -821,7 +823,7 @@ class LivePlotter:
 
         limits = soft_limits()
 #FIXME single step can be done in the ui and not in hal
-#        comp["Single_Step"]=single_step
+        JogCount=comp["Jog_Count"]
         if (self.logger.npts != self.lastpts
                 or comp["jsel1"] != o.last_jog_sel1
                 or comp["jsel2"] != o.last_jog_sel2
@@ -831,7 +833,7 @@ class LivePlotter:
                 or comp["Stop_Button"] != o.last_Stop_Button
                 or comp["Cycle_Start"] != o.last_Start_Button                
                 or comp["Rate_Sel"] != o.last_rate_sel
-                or comp["Jog_Count"] != o.last_Jog_Count
+                or JogCount != last_Jog_Count
                
                 or limits != o.last_limits
                 or self.stat.actual_position != o.last_position
@@ -845,6 +847,15 @@ class LivePlotter:
                 or self.stat.tool_table[0] != o.last_tool
                 or self.stat.motion_mode != o.last_motion_mode
                 or abs(speed - self.last_speed) > .01):
+            last_Jog_Count = JogCount
+            o.last_jog_sel1 = comp["jsel1"]
+            o.last_jog_sel2 = comp["jsel2"]
+            o.last_jog_sel3 = comp["jsel3"] 
+            o.last_Reset_Button = comp["Reset_Button"] 
+            o.last_Feed_Hold_Button = comp["Hold_Button"] 
+            o.last_Stop_Button = comp["Stop_Button"] 
+            o.last_Start_Button = comp["Cycle_Start"]
+            o.last_rate_sel = comp["Rate_Sel"] 
 
             o.last_limits = limits
             o.last_limit = self.stat.limit
@@ -967,12 +978,12 @@ class LivePlotter:
             # JOG HANDLE AXIS CHANGE (non axis)  //feed override change
             if (comp["jsel3"]==1 and comp["jsel2"]==0 and comp["jsel1"]==1):  # 'C' used for Feed Override
                 Jog_Change=0
-                if (comp["Jog_Count"] != o.last_Jog_Count):
-                    if (comp["Jog_Count"] > o.last_Jog_Count):
-                        Jog_Change = comp["Jog_Count"] - o.last_Jog_Count
+                if (JC != last_Jog_Count):
+                    if (JC > last_Jog_Count):
+                        Jog_Change = JC - last_Jog_Count
                         Jog_Change = Jog_Change * -.01
                     else:
-                        Jog_Change = o.last_Jog_Count - comp["Jog_Count"]
+                        Jog_Change = last_Jog_Count - JC
                         Jog_Change = Jog_Change * .01
                    
                    
@@ -982,8 +993,7 @@ class LivePlotter:
                 if (value < 0):
                     value=0
                 commands.set_feedrate(value)
-                #print "change ",Jog_Change, value
-                o.last_Jog_Count = comp["Jog_Count"]
+                print "change ",Jog_Change, value
                    
 
             # ESTOP handled through HAL
@@ -3626,6 +3636,7 @@ if hal_present == 1 :
     comp.newpin("Is_Paused",hal.HAL_BIT, hal.HAL_IN)
     comp.newpin("Rate_Sel",hal.HAL_FLOAT, hal.HAL_IN)
     comp.newpin("Jog_Count",hal.HAL_S32, hal.HAL_IN)
+    comp.newpin("Unused",hal.HAL_S32, hal.HAL_IN)
 
 
     if vcp:
