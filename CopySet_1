@@ -17,6 +17,16 @@ cp -r /usr/share/linuxcnc/examples/sample-configs/ARM/BeagleBone/Xylotex/setup.s
 cp -r * ~/machinekit/configs/ARM.BeagleBone.Xylotex
 cp -r /usr/share/linuxcnc/examples/* ~/machinekit/nc_files
 
+chmod a+x run1
+cp run1 ~/machinekit/run1
+
+sudo cp Splash.gif /usr/share/linuxcnc/Splash.gif
+
+sudo cp axis_x /usr/bin/axis_x
+sudo chmod a+x /usr/bin/axis_x
+
+sudo cp axis_x.tcl /usr/share/axis/tcl/axis_x.tcl
+sudo cp Pooh.ngc /usr/share/axis/images/Pooh.ngc
 cd /opt/scripts/tools/
 git pull
 sudo ./grow_partition.sh
